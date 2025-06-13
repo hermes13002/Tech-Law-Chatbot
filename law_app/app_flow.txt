@@ -1,0 +1,9 @@
+TECH-LAW CLUB LEGAL ASSISTANT (TLCLA)
+
+1. law related (done)
+2. agentic AI 
+3. upload documents
+4. login and register with Oauth
+5. deep think
+6. search web
+7. history noted responses
