@@ -1,5 +1,3 @@
-
-import 'package:law_app/constants/constant.dart';
 import 'package:law_app/constants/imports.dart';
 
 class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {

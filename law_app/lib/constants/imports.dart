@@ -5,3 +5,6 @@ export 'package:flutter_screenutil/flutter_screenutil.dart';
 export 'package:flutter/material.dart';
 export 'package:http/http.dart';
 export 'package:law_app/constants/constant.dart';
+export 'package:law_app/widgets/custom_appbar.dart';
+export 'package:law_app/widgets/custom_layout_builder.dart';
+export 'package:law_app/widgets/custom_textfield.dart';

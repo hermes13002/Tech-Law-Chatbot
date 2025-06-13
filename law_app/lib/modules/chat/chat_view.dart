@@ -26,10 +26,13 @@ class _ChatScreenState extends State<ChatScreen> {
       _textController.clear();
     });
 
-    // await queryLegalModelStream(text);
-
     try {
-      await queryLegalModelStream(text);
+      final response = await queryLegalModel(text);
+      
+      setState(() {
+        _messages.add(ChatMessage(text: response, isUser: false));
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
         _messages.add(ChatMessage(text: "Error: ${e.toString()}", isUser: false));
@@ -38,63 +41,31 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<void> queryLegalModelStream(String query) async {
-    final client = Client();
-    final request = Request(
-      'POST',
+  Future<String> queryLegalModel(String query) async {
+    final response = await post(
       Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/chat"),
+      headers: {"Content-Type": "application/json"},
+      body: json.encode({"message": query}),
     );
 
-    request.headers.addAll({"Content-Type": "application/json"});
-    request.body = jsonEncode({"message": query});
-
-    final response = await client.send(request);
-
     if (response.statusCode == 200) {
-      StringBuffer buffer = StringBuffer();
-      response.stream.transform(utf8.decoder).listen(
-        (chunk) {
-          final lines = chunk.split('\n');
-          for (final line in lines) {
-            if (line.startsWith('data: ')) {
-              final data = line.substring(6);
-              if (data.trim().isEmpty) continue;
-
-              buffer.write(data);
-              setState(() {
-                // Add or update the last bot message
-                if (_messages.isNotEmpty && !_messages.last.isUser) {
-                  _messages[_messages.length - 1] =
-                      ChatMessage(text: buffer.toString(), isUser: false);
-                } else {
-                  _messages.add(ChatMessage(text: data, isUser: false));
-                }
-              });
-            }
-          }
-        },
-        onDone: () {
-          setState(() {
-            _isLoading = false;
-          });
-        },
-        onError: (error) {
-          dev.log("Streaming error: $error");
-          setState(() {
-            _messages.add(ChatMessage(text: "Error: $error", isUser: false));
-            _isLoading = false;
-          });
-        },
-      );
+      final reply = json.decode(response.body)['reply'];
+      dev.log("Chatbot: $reply");
+      if (reply == null || reply.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("No reply from server.")),
+        );
+        return "No reply from server.";
+      }
+      return reply;
     } else {
-      dev.log("Response error: ${response.statusCode}");
-      setState(() {
-        _messages.add(ChatMessage(text: "Error: ${response.statusCode}", isUser: false));
-        _isLoading = false;
-      });
+      dev.log("Error: ${response.body}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: ${response.body}")),
+      );
+      return "Error: ${response.body}";
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +150,7 @@ class ChatMessage extends StatelessWidget {
         ? [
             ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.8,
+                maxWidth: MediaQuery.of(context).size.width * 0.7,
               ),
               child: Container(
                 padding: EdgeInsets.all(8),
@@ -195,7 +166,7 @@ class ChatMessage extends StatelessWidget {
                       style: GoogleFonts.poppins(color: whiteColorShade, fontWeight: FontWeight.bold, fontSize: 12.5.sp),
                       textAlign: TextAlign.right,
                     ),
-                    Text( 
+                    Text(
                       text,
                       style: GoogleFonts.poppins(color: whiteColor, fontWeight: FontWeight.w500, fontSize: 15.sp),
                       textAlign: TextAlign.right,
@@ -208,7 +179,7 @@ class ChatMessage extends StatelessWidget {
         : [
             ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.8,
+                maxWidth: MediaQuery.of(context).size.width * 0.7, // 70% of screen width
               ),
               child: Container(
                 padding: EdgeInsets.all(8),

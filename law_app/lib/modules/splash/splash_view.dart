@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:law_app/constants/imports.dart';
 import 'package:law_app/modules/chat/chat_view.dart';
+import 'dart:developer' as dev;
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -30,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       await http.get(Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/ping"));
     } catch (e) {
-      print("Ping failed: $e");
+      dev.log("Ping failed: $e");
     }
   }
 
