@@ -18,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen> {
     wakeServer();
     super.initState();
     Timer(
-      const Duration(seconds: 4),
+      const Duration(seconds: 5),
       () => Navigator.pushReplacement(context,
         MaterialPageRoute(builder: (context) => const ChatScreen()
         )
@@ -36,37 +36,37 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color.fromARGB(255, 49, 49, 49),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'EXCELSIOR_01',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 40.sp,
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Poppins-bold',
-                letterSpacing: 2
-              ),
-            ).animate(onPlay: (controller) => controller.repeat())
-            .shimmer(duration: 1200.ms, color: Colors.lightBlueAccent)
-            .animate()
-            .fadeIn(duration: 1500.ms, curve: Curves.easeInOut)
-            .then(delay: 50.ms)
-            .slide(duration: 300.ms, begin: const Offset(0, -0.7), end: const Offset(0, 0))
-            .then(delay: 50.ms)
-            .slide(duration: 300.ms, begin: const Offset(0, 0), end: const Offset(0, -0.5))
-            .then(delay: 50.ms)
-            .slide(duration: 300.ms, begin: const Offset(0, -0.5), end: const Offset(0, 0)),
-
-          ],
-        )
+    return Scaffold(
+      body: Container(
+        color: const Color.fromRGBO(0, 97, 255, 1),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/logo.png'
+              ).animate()
+              .fadeIn(duration: 3000.ms, curve: Curves.easeInOut),
+              
+              Text(
+                'TECH LAW',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 30.sp,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2
+                ),
+              ).animate(onPlay: (controller) => controller.repeat())
+              .shimmer(duration: 1200.ms, color: Colors.lightBlueAccent)
+              .animate()
+              .then(delay: 1000.ms)
+              .fadeIn(duration: 3000.ms, curve: Curves.easeInOut)
       
+            ],
+          )
+        
+        ),
       ),
     );
   }

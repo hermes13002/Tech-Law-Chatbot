@@ -17,7 +17,7 @@ class LegalChatbotApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (context, child) {
         return MaterialApp(
-          title: 'Quiz-ter App',
+          title: 'Tech Law App',
           home: const SplashScreen(),
           debugShowCheckedModeBanner: false,
         );
