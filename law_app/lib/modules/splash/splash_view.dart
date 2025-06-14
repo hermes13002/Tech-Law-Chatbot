@@ -47,11 +47,11 @@ class _SplashScreenState extends State<SplashScreen> {
               Image.asset(
                 'assets/logo.png'
               ).animate()
-              .fadeIn(duration: 3000.ms, curve: Curves.easeInOut),
+              .fadeIn(duration: 2000.ms, curve: Curves.easeInOut),
               
               Text(
                 'TECH LAW',
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.spaceGrotesk(
                   color: Colors.white,
                   fontSize: 30.sp,
                   fontWeight: FontWeight.bold,
@@ -61,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> {
               .shimmer(duration: 1200.ms, color: Colors.lightBlueAccent)
               .animate()
               .then(delay: 1000.ms)
-              .fadeIn(duration: 3000.ms, curve: Curves.easeInOut)
+              .fadeIn(duration: 2000.ms, curve: Curves.easeInOut)
       
             ],
           )
