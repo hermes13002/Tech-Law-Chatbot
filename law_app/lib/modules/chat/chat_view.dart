@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'dart:developer' as dev;
-import 'package:flutter/services.dart';
 import 'package:law_app/constants/imports.dart';
+import 'package:law_app/modules/chat/chat_message.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -10,7 +11,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final List<ChatMessage> _messages = [];
+  final List<MessageModel> _messages = [];
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
@@ -18,31 +19,61 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _sendMessage(String text) async {
     setState(() {
-      _isLoading = true;
-      _messages.add(ChatMessage(text: text, isUser: true));
+      _messages.add(MessageModel(fullText: text, isUser: true, displayedText: text));
       _textController.clear();
+      _isLoading = true;
     });
 
     _scrollToBottom();
 
     try {
       final response = await queryLegalModel(text);
-      
+
+      final botMessage = MessageModel(
+        fullText: response,
+        isUser: false,
+        displayedText: "",
+        isTyping: true,
+      );
+
       setState(() {
-        _messages.add(ChatMessage(text: response, isUser: false));
-        _isLoading = false;
+        _messages.add(botMessage);
       });
 
       _scrollToBottom();
+      _startTyping(botMessage);
     } catch (e) {
       setState(() {
-        _messages.add(ChatMessage(text: "Error: ${e.toString()}", isUser: false));
+        _messages.add(MessageModel(
+          fullText: "Error: ${e.toString()}",
+          isUser: false,
+          displayedText: "Error: ${e.toString()}",
+        ));
         _isLoading = false;
       });
-
-      _scrollToBottom();
     }
   }
+
+  void _startTyping(MessageModel message) {
+    int index = 0;
+    const duration = Duration(milliseconds: 10);
+
+    Timer.periodic(duration, (timer) {
+      if (index < message.fullText.length) {
+        setState(() {
+          message.displayedText += message.fullText[index];
+        });
+        index++;
+      } else {
+        timer.cancel();
+        setState(() {
+          message.isTyping = false;
+          _isLoading = false;
+        });
+      }
+    });
+  }
+
 
   Future<String> queryLegalModel(String query) async {
     final response = await post(
@@ -65,9 +96,9 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       dev.log("Error: ${response.body}");
       ScaffoldMessenger.of(context).showSnackBar(
-        snackBarWidget("Error: ${response.body}")
+        snackBarWidget("Error: ${response.statusCode}\nContact developers")
       );
-      return "Error: ${response.body}";
+      return "Error: ${response.statusCode}\nContact developers";
     }
   }
 
@@ -87,7 +118,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _textController.dispose();
-    _scrollController.dispose(); // <-- Dispose controller
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -100,6 +131,13 @@ class _ChatScreenState extends State<ChatScreen> {
         centerTitle: true,
         backgroundColor: const Color.fromRGBO(44, 49, 55, 1),
         elevation: 0,
+        leading: GestureDetector(
+          onTap: () {},
+          child: Padding(
+            padding: EdgeInsets.only(left: 12.w),
+            child: Icon(Icons.history_rounded, color: whiteColor, size: 23.sp),
+          )
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -121,11 +159,21 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: ListView.builder(
                   controller: _scrollController,
                   itemCount: _messages.length,
-                  itemBuilder: (context, index) => _messages[index],
+                  itemBuilder: (context, index) {
+                    final message = _messages[index];
+                    return ChatMessage(
+                      text: message.displayedText,
+                      isUser: message.isUser,
+                    );
+                  }
                 ),
               ),
         
-              if (_isLoading) LinearProgressIndicator(),
+              if (_isLoading) 
+              LoadingAnimationWidget.waveDots(
+                size: 50,
+                color: pryColor
+              ),
               Container(
                 height: 60.h,
                 padding: EdgeInsets.symmetric(horizontal: 12.w,),
@@ -184,110 +232,16 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
-class ChatMessage extends StatelessWidget {
-  final String text;
+class MessageModel {
+  final String fullText;
   final bool isUser;
+  String displayedText; // mutable only for bot messages
+  bool isTyping;
 
-  const ChatMessage({super.key, required this.text, required this.isUser});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start, // Align user right, assistant left
-        children: isUser
-        ? [
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.7,
-              ),
-              child: Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: pryColor,
-                  borderRadius: BorderRadius.only(topLeft: Radius.circular(12.r), topRight: Radius.circular(12.r), bottomLeft: Radius.circular(12.r))
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    // Text(
-                    //   "You",
-                    //   style: GoogleFonts.spaceGrotesk(color: whiteColorShade, fontWeight: FontWeight.bold, fontSize: 12.5.sp),
-                    //   textAlign: TextAlign.right,
-                    // ),
-                    Text(
-                      text,
-                      style: GoogleFonts.poppins(color: whiteColor, fontWeight: FontWeight.w300, fontSize: 12.sp),
-                      textAlign: TextAlign.right,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ]
-        : [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.9,
-                  ),
-                  child: Container(
-                    padding: EdgeInsets.only(left: 8, right: 8, top: 8),
-                    decoration: BoxDecoration(
-                      color: const Color.fromRGBO(44, 49, 55, 1),
-                      borderRadius: BorderRadius.only(topLeft: Radius.circular(12.r), topRight: Radius.circular(12.r), bottomRight: Radius.circular(12.r))
-                    ),
-                    child: Column(
-                      spacing: 5,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Legal Assistant",
-                          style: GoogleFonts.spaceGrotesk(color: whiteColorShade, fontWeight: FontWeight.bold, fontSize: 12.5.sp),
-                        ),
-                        Text(
-                          text,
-                          textAlign: TextAlign.justify,
-                          style: GoogleFonts.poppins(color: whiteColor, fontWeight: FontWeight.w300, fontSize: 12.sp),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                IconButton(
-                  icon: Icon(Icons.copy_rounded, color: whiteColorShade, size: 18.sp),
-                  tooltip: "Copy",
-                  onPressed: () async {
-                    await Clipboard.setData(ClipboardData(text: text));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      snackBarWidget("Copied to clipboard")
-                    );
-                  },
-                ),
-              ],
-            ),
-
-            
-          ],
-      ),
-    );
-  }
-
-  SnackBar snackBarWidget(String text) {
-    return SnackBar(
-      content: Text(text, style: GoogleFonts.poppins(fontSize: 13.sp, fontWeight: FontWeight.w500, color: Colors.white),),
-      backgroundColor: pryColor,
-      behavior: SnackBarBehavior.floating,
-      margin: EdgeInsets.only(bottom: 70.h, right: 8.w, left: 8.w),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      duration: Duration(seconds: 2),
-    );
-  }
+  MessageModel({
+    required this.fullText,
+    required this.isUser,
+    this.displayedText = "",
+    this.isTyping = false,
+  });
 }

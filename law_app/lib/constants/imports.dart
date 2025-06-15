@@ -8,3 +8,4 @@ export 'package:law_app/constants/constant.dart';
 export 'package:law_app/widgets/custom_appbar.dart';
 export 'package:law_app/widgets/custom_layout_builder.dart';
 export 'package:law_app/widgets/custom_textfield.dart';
+export 'package:loading_animation_widget/loading_animation_widget.dart';
