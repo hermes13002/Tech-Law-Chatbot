@@ -3,6 +3,8 @@ import 'dart:developer' as dev;
 import 'package:law_app/constants/imports.dart';
 import 'package:law_app/modules/chat/chat_message.dart';
 import 'package:law_app/widgets/custom_drawer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -76,23 +78,35 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<String> queryLegalModel(String query) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Load topicId or create new
+    String? topicId = prefs.getString('topicId');
+    if (topicId == null || topicId.isEmpty) {
+      topicId = const Uuid().v4();
+      await prefs.setString('topicId', topicId);
+    }
+
     final response = await post(
       Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/chat"),
       headers: {"Content-Type": "application/json"},
-      body: json.encode({"message": query}),
+      body: json.encode({
+        "message": query,
+        "topic_id": topicId,
+      }),
     );
 
     if (response.statusCode == 200) {
-      final reply = json.decode(response.body)['reply'];
-      dev.log("Chatbot: $reply");
+      final data = json.decode(response.body);
 
-      if (reply == null || reply.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          snackBarWidget("No reply from server")
-        );
-        return "No reply from server.";
+      if (data['expired'] == true) {
+        // Show dialog asking user to keep or clear
+        await _handleExpiredTopic(prefs, topicId!);
+        return "This conversation has expired.";
       }
-      return reply;
+
+      final reply = data['reply'];
+      return reply ?? "No reply.";
     } else {
       dev.log("Error: ${response.body}");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -101,6 +115,38 @@ class _ChatScreenState extends State<ChatScreen> {
       return "Error: ${response.statusCode}\nContact developers";
     }
   }
+
+  Future<void> _handleExpiredTopic(SharedPreferences prefs, String topicId) async {
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text("Conversation Expired"),
+        content: Text("This chat has expired (after 30 days). Do you want to clear and start a new one or keep it?"),
+        actions: [
+          TextButton(
+            child: Text("Keep"),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: Text("Clear & Start New"),
+            onPressed: () async {
+              await prefs.remove('topicId');
+              await post(
+                Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/clear_history"),
+                headers: {"Content-Type": "application/json"},
+                body: json.encode({"topic_id": topicId}),
+              );
+              Navigator.pop(context);
+              setState(() {
+                _messages.clear(); // optional: clear local chat
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
 
   void _scrollToBottom() {
     // Wait for the next frame to ensure the message is rendered
@@ -133,7 +179,7 @@ class _ChatScreenState extends State<ChatScreen> {
         elevation: 0,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: Icon(Icons.menu_open, color: whiteColor, size: 23.sp),
+            icon: Icon(Icons.menu , color: whiteColor, size: 23.sp),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),

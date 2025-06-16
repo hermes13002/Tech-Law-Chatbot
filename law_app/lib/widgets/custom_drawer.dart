@@ -1,8 +1,14 @@
 import 'package:law_app/constants/imports.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class CustomDrawer extends StatelessWidget {
+class CustomDrawer extends StatefulWidget {
   const CustomDrawer({super.key});
 
+  @override
+  State<CustomDrawer> createState() => _CustomDrawerState();
+}
+
+class _CustomDrawerState extends State<CustomDrawer> {
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -25,4 +31,20 @@ class CustomDrawer extends StatelessWidget {
       )
     );
   }
+
+  // Future<void> _clearChat() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final topicId = prefs.getString('topicId');
+  //   if (topicId != null) {
+  //     await post(
+  //       Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/clear_history"),
+  //       headers: {"Content-Type": "application/json"},
+  //       body: json.encode({"topic_id": topicId}),
+  //     );
+  //     await prefs.remove('topicId');
+  //   }
+  //   setState(() {
+  //     _messages.clear();
+  //   });
+  // }
 }
