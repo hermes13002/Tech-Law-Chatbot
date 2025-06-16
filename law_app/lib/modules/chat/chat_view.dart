@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as dev;
 import 'package:law_app/constants/imports.dart';
 import 'package:law_app/modules/chat/chat_message.dart';
+import 'package:law_app/widgets/custom_drawer.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -74,7 +75,6 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-
   Future<String> queryLegalModel(String query) async {
     final response = await post(
       Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/chat"),
@@ -131,14 +131,14 @@ class _ChatScreenState extends State<ChatScreen> {
         centerTitle: true,
         backgroundColor: const Color.fromRGBO(44, 49, 55, 1),
         elevation: 0,
-        leading: GestureDetector(
-          onTap: () {},
-          child: Padding(
-            padding: EdgeInsets.only(left: 12.w),
-            child: Icon(Icons.history_rounded, color: whiteColor, size: 23.sp),
-          )
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu_open, color: whiteColor, size: 23.sp),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
       ),
+      drawer: CustomDrawer(),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -148,7 +148,7 @@ class _ChatScreenState extends State<ChatScreen> {
               const Color.fromRGBO(44, 49, 55, 1),
               const Color.fromRGBO(44, 49, 55, 1),
             ],
-            stops: [0.0, 0.75], // bgColor for 75%, white for the last 25%
+            stops: [0.0, 0.75],
           ),
         ),
         child: CustomLayoutBuilder(
@@ -175,7 +175,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 color: pryColor
               ),
               Container(
-                height: 60.h,
+                height: 50.h,
                 padding: EdgeInsets.symmetric(horizontal: 12.w,),
                 decoration: BoxDecoration(
                   color: const Color.fromARGB(255, 74, 83, 94),
@@ -199,13 +199,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 
                     // button
                     Container(
-                      padding: EdgeInsets.all(4),
+                      padding: EdgeInsets.all(2),
                       decoration: BoxDecoration(
                         color: pryColor,
                         shape: BoxShape.circle
                       ),
                       child: IconButton(
-                        icon: Icon(Icons.send, color: whiteColor, size: 20.sp,),
+                        icon: Icon(Icons.send, color: whiteColor, size: 17.sp,),
                         onPressed: () => _sendMessage(_textController.text),
                       ),
                     ),

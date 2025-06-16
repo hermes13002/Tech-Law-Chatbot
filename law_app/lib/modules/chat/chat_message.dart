@@ -41,7 +41,7 @@ class ChatMessage extends StatelessWidget {
                           color: whiteColor,
                           fontWeight: FontWeight.w300,
                           fontSize: 12.sp),
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.left,
                     ),
                   ),
                 ),
@@ -88,15 +88,20 @@ class ChatMessage extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.copy_rounded,
-                          color: whiteColorShade, size: 18.sp),
+                      icon: Icon(Icons.copy_rounded, color: whiteColorShade, size: 18.sp),
                       tooltip: "Copy",
                       onPressed: () async {
-                        await Clipboard.setData(
-                            ClipboardData(text: replyText));
+                        await Clipboard.setData(ClipboardData(text: replyText));
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text("Copied to clipboard"),
+                            backgroundColor: pryColor,
+                            content: Text("Copied to clipboard",
+                              style: GoogleFonts.poppins(
+                                color: whiteColorShade,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12.5.sp
+                              ),
+                            ),
                           ),
                         );
                       },
