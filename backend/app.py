@@ -165,6 +165,17 @@ def chat_with_model():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/chat_history', methods=['GET'])
+def chat_history():
+    user_id = request.args.get("user_id") or "anonymous"
+    topic = request.args.get("topic") or "general_law"
+    key = f"{user_id}_{topic}"
+    history_entry = chat_histories.get(key)
+    if not history_entry:
+        return jsonify({"history": []}), 200
+    return jsonify({"history": history_entry["history"]}), 200
+
 
 @app.route('/history/clear', methods=['POST'])
 def clear_history():

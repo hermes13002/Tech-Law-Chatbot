@@ -19,6 +19,35 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
 
+  List<Map<String, dynamic>> chatHistory = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchChatHistory();
+  }
+
+  Future<void> _fetchChatHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? topicId = prefs.getString('topicId');
+    // You may also want to use a userId if available
+    String userId = "anonymous"; // Replace with actual user id if you have
+
+    final response = await get(
+      Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/chat_history?user_id=$userId&topic=${topicId ?? 'general_law'}"),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        chatHistory = List<Map<String, dynamic>>.from(data['history'] ?? []);
+      });
+    } else {
+      setState(() {
+        chatHistory = [];
+      });
+    }
+  }
 
   Future<void> _sendMessage(String text) async {
     setState(() {
@@ -184,7 +213,43 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ),
       ),
-      drawer: CustomDrawer(),
+      drawer: Drawer(
+        backgroundColor: const Color.fromRGBO(44, 49, 55, 1),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Gap(30.h),
+              Center(child: Image.asset('assets/logo.png', width: 50.sp, )),
+              
+              Gap(30.h),
+              Text('Chat History', style: GoogleFonts.poppins(fontSize: 13.sp, fontWeight: FontWeight.w500, color: Colors.white),),
+              Divider(endIndent: 180.sp,),
+
+              Expanded(
+                child: chatHistory.isEmpty
+                ? Text("No chat history.", style: TextStyle(color: Colors.white70))
+                : ListView.builder(
+                    itemCount: chatHistory.length,
+                    itemBuilder: (context, index) {
+                      final entry = chatHistory[index];
+                      final isUser = entry['role'] == 'user';
+                      final content = entry['content'] ?? '';
+                      return ListTile(
+                        leading: Icon(isUser ? Icons.person : Icons.smart_toy, color: Colors.white),
+                        title: Text(
+                          content.length > 40 ? content.substring(0, 40) + "..." : content,
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      );
+                    },
+                  ),
+              ),
+            ],
+          ),
+        )
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
