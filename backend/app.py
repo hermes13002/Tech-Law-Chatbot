@@ -6,7 +6,7 @@
 # app = Flask(__name__)
 # CORS(app)
 
-# GROQ_API_KEY = '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'
+# GROQ_API_KEY = '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'
 # client = Groq(api_key=GROQ_API_KEY)
 
 # def strip_markdown_and_html(text):
@@ -96,7 +96,13 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 CORS(app)
 
-GROQ_API_KEY = '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'
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+
+# GROQ_API_KEY = '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'
 client = Groq(api_key=GROQ_API_KEY)
 
 # In-memory chat history store: user_id_topic => { history: [...], last_updated: datetime }
@@ -112,6 +118,7 @@ def strip_markdown_and_html(text):
     text = re.sub(r'\n\s*\d+\.\s+', '\n1. ', text)
     return text.strip()
 
+# ====================== Chat Endpoint ======================
 @app.route('/chat', methods=['POST'])
 def chat_with_model():
     data = request.get_json()
@@ -165,18 +172,34 @@ def chat_with_model():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+# ====================== Chat History Management ======================
 @app.route('/chat_history', methods=['GET'])
 def chat_history():
-    user_id = request.args.get("user_id") or "anonymous"
-    topic = request.args.get("topic") or "general_law"
-    key = f"{user_id}_{topic}"
-    history_entry = chat_histories.get(key)
-    if not history_entry:
-        return jsonify({"history": []}), 200
-    return jsonify({"history": history_entry["history"]}), 200
+    try:
+        user_id = request.args.get("user_id")
+        if not user_id:
+            return jsonify({"error": "user_id is required"}), 400
 
+        user_chats = {}
+        for key, entry in chat_histories.items():
+            if key.startswith(f"{user_id}_"):
+                topic = key[len(user_id)+1:]
+                user_chats[topic] = entry["history"]
+        return jsonify({"chats": user_chats}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
+# ====================== User ID Management ======================
+@app.route('/user_id', methods=['GET'])
+def get_user_id():
+    try:
+        new_id = str(uuid.uuid4())
+        return jsonify({"user_id": new_id}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ====================== Clear Chat History ======================
 @app.route('/history/clear', methods=['POST'])
 def clear_history():
     data = request.get_json()
@@ -190,6 +213,7 @@ def clear_history():
     else:
         return jsonify({"status": "no_history_found"}), 404
 
+# ====================== Check Expiry of Chat History ======================
 @app.route('/history/check_expiry', methods=['POST'])
 def check_expiry():
     data = request.get_json()
@@ -211,6 +235,7 @@ def check_expiry():
     else:
         return jsonify({"status": "active"}), 200
 
+# ====================== Health Check ======================
 @app.route('/ping', methods=['GET'])
 def ping():
     return jsonify({"status": "awake"}), 200

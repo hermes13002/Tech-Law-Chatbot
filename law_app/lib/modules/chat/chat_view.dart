@@ -20,27 +20,54 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = false;
 
   List<Map<String, dynamic>> chatHistory = [];
+  String? userId;
 
   @override
   void initState() {
     super.initState();
-    _fetchChatHistory();
+    _initUserIdAndHistory();
+  }
+
+  Future<void> _initUserIdAndHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('userId');
+    if (userId == null) {
+      final response = await get(
+        Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/user_id"),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        userId = data['user_id'];
+        await prefs.setString('userId', userId!);
+      } else {
+        userId = "anonymous";
+      }
+    }
+    await _fetchChatHistory();
   }
 
   Future<void> _fetchChatHistory() async {
     final prefs = await SharedPreferences.getInstance();
     String? topicId = prefs.getString('topicId');
-    // You may also want to use a userId if available
-    String userId = "anonymous"; // Replace with actual user id if you have
+    if (userId == null) return;
 
     final response = await get(
-      Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/chat_history?user_id=$userId&topic=${topicId ?? 'general_law'}"),
+      Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/chat_history?user_id=$userId"),
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      // Flatten all chats into a single list for display
+      List<Map<String, dynamic>> allHistory = [];
+      if (data['chats'] != null) {
+        data['chats'].forEach((topic, history) {
+          for (var entry in history) {
+            allHistory.add(entry);
+          }
+        });
+      }
       setState(() {
-        chatHistory = List<Map<String, dynamic>>.from(data['history'] ?? []);
+        chatHistory = allHistory;
       });
     } else {
       setState(() {
@@ -109,19 +136,21 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<String> queryLegalModel(String query) async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Load topicId or create new
     String? topicId = prefs.getString('topicId');
     if (topicId == null || topicId.isEmpty) {
       topicId = const Uuid().v4();
       await prefs.setString('topicId', topicId);
     }
 
+    userId ??= prefs.getString('userId') ?? "anonymous";
+
     final response = await post(
       Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/chat"),
       headers: {"Content-Type": "application/json"},
       body: json.encode({
         "message": query,
-        "topic_id": topicId,
+        "user_id": userId,
+        "topic": topicId,
       }),
     );
 
@@ -175,7 +204,6 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
-
 
   void _scrollToBottom() {
     // Wait for the next frame to ensure the message is rendered

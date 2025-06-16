@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:law_app/modules/splash/splash_view.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(LegalChatbotApp());
 }
 
