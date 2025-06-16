@@ -96,7 +96,7 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 CORS(app)
 
-GROQ_API_KEY = 'your_groq_api_key_here'
+GROQ_API_KEY = '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'
 client = Groq(api_key=GROQ_API_KEY)
 
 # In-memory chat history store: user_id_topic => { history: [...], last_updated: datetime }
