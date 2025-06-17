@@ -242,6 +242,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
       drawer: Drawer(
+        width: 230.w,
         backgroundColor: const Color.fromRGBO(44, 49, 55, 1),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -252,7 +253,21 @@ class _ChatScreenState extends State<ChatScreen> {
               Center(child: Image.asset('assets/logo.png', width: 50.sp, )),
               
               Gap(30.h),
-              Text('Chat History', style: GoogleFonts.poppins(fontSize: 13.sp, fontWeight: FontWeight.w500, color: Colors.white),),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Chat History', style: GoogleFonts.poppins(fontSize: 13.sp, fontWeight: FontWeight.w500, color: Colors.white),),
+
+                  IconButton(
+                    icon: Icon(Icons.refresh, color: Colors.white, size: 15.sp,),
+                    onPressed: () async {
+                      // await _fetchChatHistory();
+                      ScaffoldMessenger.of(context).showSnackBar(snackBarWidget("Chat history refreshed."));
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
               Divider(endIndent: 180.sp,),
 
               Expanded(
