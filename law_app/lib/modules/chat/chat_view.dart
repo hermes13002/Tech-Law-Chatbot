@@ -21,6 +21,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   List<Map<String, dynamic>> chatHistory = [];
   String? userId;
+  String? userDisplay;
 
   @override
   void initState() {
@@ -251,8 +252,25 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               Gap(30.h),
               Center(child: Image.asset('assets/logo.png', width: 50.sp, )),
+
+              Gap(20.h),
+              Row(
+                spacing: 5.w,
+                children: [
+                  Icon(Icons.person, color: Colors.white, size: 15.sp),
+
+                  Flexible(
+                    child: Text(
+                      "User ID: $userId",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(fontSize: 12.sp, color: Colors.white70),
+                    ),
+                  ),
+                ],
+              ),
               
-              Gap(30.h),
+              Gap(10.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
