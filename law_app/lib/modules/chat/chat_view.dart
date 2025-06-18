@@ -49,7 +49,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _fetchChatHistory() async {
-    final prefs = await SharedPreferences.getInstance();
     if (userId == null) return;
 
     final response = await get(
@@ -75,6 +74,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
     setState(() {
       _messages.add(MessageModel(fullText: text, isUser: true, displayedText: text));
       _textController.clear();
@@ -84,10 +84,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      final response = await queryLegalModel(text);
+      final reply = await queryLegalModel(text);
 
       final botMessage = MessageModel(
-        fullText: response,
+        fullText: reply,
         isUser: false,
         displayedText: "",
         isTyping: true,
@@ -133,14 +133,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<String> queryLegalModel(String query) async {
     final prefs = await SharedPreferences.getInstance();
-
-    String? topicId = prefs.getString('topicId');
-    if (topicId == null || topicId.isEmpty) {
-      topicId = const Uuid().v4();
-      await prefs.setString('topicId', topicId);
-    }
-
     userId ??= prefs.getString('userId') ?? "anonymous";
+
+    // Use the topic as the current date or a static topic for now
+    // You can enhance this to allow user to select or create topics
+    String topic = "general_law";
 
     final response = await post(
       Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/chat"),
@@ -148,19 +145,12 @@ class _ChatScreenState extends State<ChatScreen> {
       body: json.encode({
         "message": query,
         "user_id": userId,
-        "topic": topicId,
+        "topic": topic,
       }),
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-
-      if (data['expired'] == true) {
-        // Show dialog asking user to keep or clear
-        await _handleExpiredTopic(prefs, topicId!);
-        return "This conversation has expired.";
-      }
-
       final reply = data['reply'];
       return reply ?? "No reply.";
     } else {
@@ -170,37 +160,6 @@ class _ChatScreenState extends State<ChatScreen> {
       );
       return "Error: ${response.statusCode}\nContact developers";
     }
-  }
-
-  Future<void> _handleExpiredTopic(SharedPreferences prefs, String topicId) async {
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text("Conversation Expired"),
-        content: Text("This chat has expired (after 30 days). Do you want to clear and start a new one or keep it?"),
-        actions: [
-          TextButton(
-            child: Text("Keep"),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: Text("Clear & Start New"),
-            onPressed: () async {
-              await prefs.remove('topicId');
-              await post(
-                Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/clear_history"),
-                headers: {"Content-Type": "application/json"},
-                body: json.encode({"topic_id": topicId}),
-              );
-              Navigator.pop(context);
-              setState(() {
-                _messages.clear(); // optional: clear local chat
-              });
-            },
-          ),
-        ],
-      ),
-    );
   }
 
   void _scrollToBottom() {
@@ -278,7 +237,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     onPressed: () async {
                       await _fetchChatHistory();
                       ScaffoldMessenger.of(context).showSnackBar(snackBarWidget("Chat history refreshed."));
-                      // Navigator.pop(context);
                     },
                   ),
                 ],
