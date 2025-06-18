@@ -20,6 +20,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = false;
 
   List<Map<String, dynamic>> chatHistory = [];
+  List<String> chatTopics = [];
   String? userId;
   String? userDisplay;
 
@@ -49,7 +50,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _fetchChatHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    String? topicId = prefs.getString('topicId');
     if (userId == null) return;
 
     final response = await get(
@@ -58,21 +58,18 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      // Flatten all chats into a single list for display
-      List<Map<String, dynamic>> allHistory = [];
+      List<String> topics = [];
       if (data['chats'] != null) {
         data['chats'].forEach((topic, history) {
-          for (var entry in history) {
-            allHistory.add(entry);
-          }
+          topics.add(topic);
         });
       }
       setState(() {
-        chatHistory = allHistory;
+        chatTopics = topics;
       });
     } else {
       setState(() {
-        chatHistory = [];
+        chatTopics = [];
       });
     }
   }
@@ -279,9 +276,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   IconButton(
                     icon: Icon(Icons.refresh, color: Colors.white, size: 15.sp,),
                     onPressed: () async {
-                      // await _fetchChatHistory();
+                      await _fetchChatHistory();
                       ScaffoldMessenger.of(context).showSnackBar(snackBarWidget("Chat history refreshed."));
-                      Navigator.pop(context);
+                      // Navigator.pop(context);
                     },
                   ),
                 ],
@@ -292,20 +289,21 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: chatHistory.isEmpty
                 ? Text("No chat history.", style: TextStyle(color: Colors.white70))
                 : ListView.builder(
-                    itemCount: chatHistory.length,
-                    itemBuilder: (context, index) {
-                      final entry = chatHistory[index];
-                      final isUser = entry['role'] == 'user';
-                      final content = entry['content'] ?? '';
-                      return ListTile(
-                        leading: Icon(isUser ? Icons.person : Icons.smart_toy, color: Colors.white),
-                        title: Text(
-                          content.length > 40 ? content.substring(0, 40) + "..." : content,
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      );
-                    },
-                  ),
+                  itemCount: chatTopics.length,
+                  itemBuilder: (context, index) {
+                    final topic = chatTopics[index];
+                    return ListTile(
+                      leading: Icon(Icons.folder, color: Colors.white),
+                      title: Text(
+                        topic.length > 40 ? "${topic.substring(0, 40)}..." : topic,
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      onTap: () {
+                        // TODO: Load messages for this topic if needed
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -407,7 +405,7 @@ class _ChatScreenState extends State<ChatScreen> {
 class MessageModel {
   final String fullText;
   final bool isUser;
-  String displayedText; // mutable only for bot messages
+  String displayedText;
   bool isTyping;
 
   MessageModel({
