@@ -325,13 +325,13 @@ class _ChatScreenState extends State<ChatScreen> {
                               style: GoogleFonts.poppins(color: Colors.white),
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.delete, color: Colors.white, size: 15.sp),
-                            onPressed: () async {
-                              // await _clearChatHistory(topic);
-                              ScaffoldMessenger.of(context).showSnackBar(snackBarWidget("Chat history cleared."));
-                            },
-                          ),
+                          // IconButton(
+                          //   icon: Icon(Icons.delete, color: Colors.white, size: 15.sp),
+                          //   onPressed: () async {
+                          //     // await _clearChatHistory(topic);
+                          //     ScaffoldMessenger.of(context).showSnackBar(snackBarWidget("Chat history cleared."));
+                          //   },
+                          // ),
                         ],
                       ),
                     );
