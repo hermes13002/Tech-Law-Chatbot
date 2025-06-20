@@ -11,10 +11,10 @@ CORS(app)
 # ======================= MongoDB Setup ======================
 from pymongo import MongoClient
 
-# For local MongoDB
-# client = MongoClient("mongodb://localhost:27017/")
 # For Atlas, use your connection string:
-client = MongoClient("mongodb+srv://soaresayoigbala:Excelsior13$@techlawcluster1.4oil6yw.mongodb.net/")
+client = MongoClient(
+    "mongodb+srv://soaresayoigbala:Excelsior13$@techlawcluster1.4oil6yw.mongodb.net/?retryWrites=true&w=majority&tls=true"
+)
 
 db = client["law_chatbot_db"]  # Database name
 users_col = db["users"]    
