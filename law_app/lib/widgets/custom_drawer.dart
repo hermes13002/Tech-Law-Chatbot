@@ -1,5 +1,4 @@
 import 'package:law_app/constants/imports.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class CustomDrawer extends StatefulWidget {
   const CustomDrawer({super.key});

@@ -2,9 +2,7 @@ import 'dart:async';
 import 'dart:developer' as dev;
 import 'package:law_app/constants/imports.dart';
 import 'package:law_app/modules/chat/chat_message.dart';
-import 'package:law_app/widgets/custom_drawer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -23,11 +21,16 @@ class _ChatScreenState extends State<ChatScreen> {
   List<String> chatTopics = [];
   String? userId;
   String? userDisplay;
+  String currentTopic = "";
+
+  Timer? _typingTimer;
+  bool _isTypingStopped = false;
 
   @override
   void initState() {
     super.initState();
     _initUserIdAndHistory();
+    
   }
 
   Future<void> _initUserIdAndHistory() async {
@@ -46,6 +49,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     }
     await _fetchChatHistory();
+    await _loadChatForTopic(currentTopic);
   }
 
   Future<void> _fetchChatHistory() async {
@@ -73,12 +77,44 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _loadChatForTopic(String topic) async {
+    if (userId == null) return;
+    final response = await get(
+      Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/chat_history?user_id=$userId"),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final chats = data['chats'] ?? {};
+      final history = chats[topic] as List<dynamic>? ?? [];
+      setState(() {
+        currentTopic = topic;
+        _messages.clear();
+        for (var msg in history) {
+          _messages.add(
+            MessageModel(
+              fullText: msg['content'] ?? '',
+              isUser: msg['role'] == 'user',
+              displayedText: msg['content'] ?? '',
+              isTyping: false,
+            ),
+          );
+        }
+      });
+      _scrollToBottom();
+    }
+  }
+
   Future<void> _sendMessage(String text) async {
-    if (text.trim().isEmpty) return;
+     if (text.trim().isEmpty || _isLoading) return;
     setState(() {
-      _messages.add(MessageModel(fullText: text, isUser: true, displayedText: text));
+      _messages.add(MessageModel(
+        fullText: text,
+        isUser: true,
+        displayedText: text
+      ));
       _textController.clear();
       _isLoading = true;
+      _isTypingStopped = false;
     });
 
     _scrollToBottom();
@@ -99,6 +135,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       _scrollToBottom();
       _startTyping(botMessage);
+      dev.log("userId: $userId");
     } catch (e) {
       setState(() {
         _messages.add(MessageModel(
@@ -113,9 +150,18 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _startTyping(MessageModel message) {
     int index = 0;
-    const duration = Duration(milliseconds: 10);
+    const duration = Duration(milliseconds: 5);
 
-    Timer.periodic(duration, (timer) {
+    _typingTimer?.cancel();
+    _typingTimer = Timer.periodic(duration, (timer) {
+      if (_isTypingStopped) {
+        timer.cancel();
+        setState(() {
+          message.isTyping = false;
+          _isLoading = false;
+        });
+        return;
+      }
       if (index < message.fullText.length) {
         setState(() {
           message.displayedText += message.fullText[index];
@@ -131,13 +177,26 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  void _stopTyping() {
+    setState(() {
+      _isTypingStopped = true;
+      _isLoading = false;
+    });
+    _typingTimer?.cancel();
+    // Optionally, finish displaying the full message immediately:
+    if (_messages.isNotEmpty && !_messages.last.isUser) {
+      setState(() {
+        _messages.last.displayedText = _messages.last.fullText;
+        _messages.last.isTyping = false;
+      });
+    }
+  }
+
   Future<String> queryLegalModel(String query) async {
     final prefs = await SharedPreferences.getInstance();
     userId ??= prefs.getString('userId') ?? "anonymous";
 
-    // Use the topic as the current date or a static topic for now
-    // You can enhance this to allow user to select or create topics
-    String topic = "general_law";
+    String topic = currentTopic.isNotEmpty ? currentTopic : "general_law";
 
     final response = await post(
       Uri.parse("https://tech-law-chatbot-backend-api.onrender.com/chat"),
@@ -179,6 +238,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
+    _typingTimer?.cancel();
     super.dispose();
   }
 
@@ -241,24 +301,39 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ],
               ),
-              Divider(endIndent: 180.sp,),
+              // Divider(endIndent: 180.sp,),
 
-              Expanded(
-                child: chatHistory.isEmpty
+              Flexible(
+                child: chatTopics.isEmpty
                 ? Text("No chat history.", style: TextStyle(color: Colors.white70))
                 : ListView.builder(
                   itemCount: chatTopics.length,
                   itemBuilder: (context, index) {
                     final topic = chatTopics[index];
-                    return ListTile(
-                      leading: Icon(Icons.folder, color: Colors.white),
-                      title: Text(
-                        topic.length > 40 ? "${topic.substring(0, 40)}..." : topic,
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      onTap: () {
-                        // TODO: Load messages for this topic if needed
+                    return InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await _loadChatForTopic(topic);
                       },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              topic.toUpperCase(),
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(color: Colors.white),
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.white, size: 15.sp),
+                            onPressed: () async {
+                              // await _clearChatHistory(topic);
+                              ScaffoldMessenger.of(context).showSnackBar(snackBarWidget("Chat history cleared."));
+                            },
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -322,6 +397,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         obscureText: false,
                         maxLines: 20,
                         minLines: 1,
+                        enabled: !_isLoading,
                       )
                     ),
                 
@@ -333,8 +409,14 @@ class _ChatScreenState extends State<ChatScreen> {
                         shape: BoxShape.circle
                       ),
                       child: IconButton(
-                        icon: Icon(Icons.send, color: whiteColor, size: 17.sp,),
-                        onPressed: () => _sendMessage(_textController.text),
+                        icon: Icon(
+                          _isLoading ? Icons.stop : Icons.send,
+                          color: whiteColor,
+                          size: 17.sp,
+                        ),
+                        onPressed: _isLoading
+                          ? _stopTyping
+                          : () => _sendMessage(_textController.text),
                       ),
                     ),
                   ],

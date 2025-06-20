@@ -10,7 +10,8 @@ class CustomTextfield extends StatelessWidget {
   final Widget? suffixIcon;
   final int? maxLines;
   final int? minLines;
-  const CustomTextfield({super.key, required this.text, this.controller, this.validator, this.onChanged, required this.obscureText, this.suffixIcon, this.onFieldSubmitted, this.maxLines, this.minLines});
+  final bool? enabled;
+  const CustomTextfield({super.key, required this.text, this.controller, this.validator, this.onChanged, required this.obscureText, this.suffixIcon, this.onFieldSubmitted, this.maxLines, this.minLines, this.enabled});
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +46,7 @@ class CustomTextfield extends StatelessWidget {
       ),
       onChanged: onChanged,
       onFieldSubmitted: onFieldSubmitted,
+      enabled: enabled,
     );
   }
 }
