@@ -10,8 +10,11 @@ import 'package:shelf_cors_headers/shelf_cors_headers.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
+import 'package:dotenv/dotenv.dart' as dotenv;
 
-const jwtSecret = 'excelsiorJWTSecretKey';
+final env = dotenv.DotEnv();
+
+final jwtSecret = env['JWT_SECRET'];
 const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
 final _rnd = Random.secure();
 final _uuid = Uuid();
@@ -29,7 +32,7 @@ Future<String> generateSequentialMessageId(mongo.DbCollection messagesCollection
   
   // Format with zero-padding (e.g., msg_001, msg_002, etc.)
   final paddedNumber = (count + 1).toString().padLeft(3, '0');
-  return 'msg_$paddedNumber';
+  return 'msg_$paddedNumber'; 
 }
 
 // Generate a random salt
@@ -62,7 +65,7 @@ Middleware checkAuth() {
 
       final token = authHeader.substring(7);
       try {
-        final jwt = JWT.verify(token, SecretKey(jwtSecret));
+        final jwt = JWT.verify(token, SecretKey(jwtSecret!));
         final updatedRequest = request.change(context: {'user': jwt.payload});
         return handler(updatedRequest);
       } catch (e) {
@@ -73,7 +76,8 @@ Middleware checkAuth() {
 }
 
 Future<void> main() async {
-  final db = await mongo.Db.create("mongodb+srv://soaresayoigbala:Excelsior13\$@techlawcluster1.4oil6yw.mongodb.net/?retryWrites=true&w=majority&tls=true");
+
+  final db = await mongo.Db.create(env['DB_URI'] ?? '');
   await db.open();
   final usersCollection = db.collection('users');
   final conversationsCollection = db.collection('conversations');
@@ -81,9 +85,9 @@ Future<void> main() async {
   print("Connected to MongoDB");
 
   // groq configuration
-  const String groqApiKey = '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';
-  const String groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
-  
+  final String groqApiKey = env['GROQ_API_KEY'] ?? '';
+  final String groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+
   final publicRouter = Router();
   final privateRouter = Router();
   final chatRouter = Router();
@@ -144,7 +148,7 @@ Future<void> main() async {
       "email": email,
       "userId": user['id'],
     });
-    final token = jwt.sign(SecretKey(jwtSecret), expiresIn: Duration(hours: 1));
+    final token = jwt.sign(SecretKey(jwtSecret!), expiresIn: Duration(hours: 1));
 
     return jsonResponse({
         "message": "Login successful",
