@@ -50,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen> {
               .fadeIn(duration: 2000.ms, curve: Curves.easeInOut),
               
               Text(
-                'TECH LAW',
+                'TECH LAW CLUB, LASU',
                 style: GoogleFonts.spaceGrotesk(
                   color: Colors.white,
                   fontSize: 30.sp,

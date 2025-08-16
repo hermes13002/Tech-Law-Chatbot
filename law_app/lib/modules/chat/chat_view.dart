@@ -455,3 +455,5 @@ class MessageModel {
     this.isTyping = false,
   });
 }
+
+
