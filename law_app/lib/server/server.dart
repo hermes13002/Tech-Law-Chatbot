@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_cors_headers/shelf_cors_headers.dart';
@@ -37,8 +38,12 @@ class Server {
       .addMiddleware(corsHeaders())
       .addHandler(_routeRequest);
     
+    // Get host and port from environment variables or use defaults
+    final host = Platform.environment['HOST'] ?? 'localhost';
+    final port = int.parse(Platform.environment['PORT'] ?? '8080');
+    
     // Start the server
-    final server = await serve(handler, 'localhost', 8080);
+    final server = await serve(handler, host, port);
     print('Server running at http://${server.address.host}:${server.port}');
   }
   

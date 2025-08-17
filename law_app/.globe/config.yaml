@@ -1,0 +1,19 @@
+# Globe.dev configuration file
+version: 1
+
+# Specify the Dart version to use
+env:
+  DART_VERSION: "3.6.0"
+
+# Build configuration
+build:
+  # Commands to run during the build phase
+  commands:
+    - cd law_app && dart pub get
+
+# Runtime configuration
+run:
+  # Command to start the application
+  command: cd law_app && dart bin/server.dart
+  # Port to expose
+  port: 8080

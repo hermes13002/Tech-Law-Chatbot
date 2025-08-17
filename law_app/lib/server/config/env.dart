@@ -12,8 +12,13 @@ class EnvConfig {
   
   EnvConfig._internal() {
     env = dotenv.DotEnv();
-    // Load environment variables if needed
-    // env.load();
+    // Load environment variables from .env file
+    try {
+      env.load();
+      print('Environment variables loaded from .env file');
+    } catch (e) {
+      print('No .env file found, using environment variables or defaults');
+    }
   }
   
   /// Get JWT secret key
